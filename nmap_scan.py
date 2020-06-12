@@ -16,8 +16,6 @@ from datetime import datetime
 mac_list = os.environ['HOME'] + "/maclist.log"
 
 # variable containing the filepath of the approved mac addresses on the LAN file
-# * NOTE * Do not include the MAC address of the localhost, which is running the script.
-# nmap doesn't include the MAC address in its returns of the server which the script is running on
 masterfile = os.environ['HOME'] + "/master_mac"
 
 # variable containing the filepath of the log file which documents every scan result
