@@ -14,8 +14,13 @@ example: $ export PYTHONPATH=/usr/lib/python3/dist-packages/
 
 Also don't forget the / at the end like I did
 
-	If you run the script and get the error: "No module named <module name> then python cannot find the module from the PYTHONPATH environment variable and you may need to troubleshoot.
+	If you run the script and get the error: "No module named <module name>" then python cannot find the module from the PYTHONPATH environment variable and you may need to troubleshoot.
 
 ## Script Info ##
 
 I've added as many comments as possible to be verbose as possible so the script is easy to maintain if and when changes are made to your configuration. *Disclaimer: I've not tested this thoroughly, and don't even have an SMTP server setup*
+
+*Currently the scan performs: nmap -oX - -n -sn 192.168.1.69/24*
+*-sn has replaced -sP in newer versions of nmap, if you are using an older version of nmap that still uses -sP you will need to change -sn to -sP in the script*
+
+Feel free to remove or change any of the print statements and any content in general. You will need to configure the email addresses and your SMTP server host and port number, you can connect the SMTP server to gmail but will need to lookup how to do that, or just let me know and I can update script.

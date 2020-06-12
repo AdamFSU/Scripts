@@ -1,10 +1,14 @@
 #!/usr/local/bin/python3
 
+# *** NOTE: THIS SCRIPT MUST BE RUN AS ROOT ***
+
 # python module imports
 import os
 import shutil
 import nmap
 import smtplib
+import sys
+import socket
 from email.message import EmailMessage
 from datetime import datetime
 
@@ -12,6 +16,8 @@ from datetime import datetime
 mac_list = os.environ['HOME'] + "/maclist.log"
 
 # variable containing the filepath of the approved mac addresses on the LAN file
+# * NOTE * Do not include the MAC address of the localhost, which is running the script.
+# nmap doesn't include the MAC address in its returns of the server which the script is running on
 masterfile = os.environ['HOME'] + "/master_mac"
 
 # variable containing the filepath of the log file which documents every scan result
@@ -31,6 +37,7 @@ print("Don't forget to update your network in the nmap scan of this script")
 # Create port scanner object, nm
 nm = nmap.PortScanner()
 # Perform: nmap -oX - -n -sn 192.168.1.69/24
+# *** NOTE: -sP has changed to -sn for newer versions of nmap! ***
 nm.scan(hosts='192.168.1.69/24', arguments='-n -sn')
 # Retrieve results for all hosts found
 nm.all_hosts()
@@ -40,8 +47,8 @@ for host in nm.all_hosts():
     if 'mac' in nm[host]['addresses']:
         f.write(str(nm[host]['addresses']) + "\n")
     # If 'mac' expression isn't found in results print warning
-    else:
-        print("MAC address not found in results, make sure you run this script as root!")
+    elif nm[host]['status']['reason'] != "localhost-response":
+        print("MAC addresses not found in results, make sure you run this script as root!")
 
 # Close file for editing
 f.close()
@@ -52,7 +59,12 @@ mac_addresses = f.read().splitlines()
 # Close file for reading
 f.close()
 # Open masterfile for reading
-f2 = open(masterfile, "r")
+if os.path.isfile(masterfile):
+    f2 = open(masterfile, "r")
+else:
+    print("Could not find master_mac file! Verify file path is correct!")
+    sys.exit()
+
 # Read each line of file and store it in a list
 master_mac_addresses = f2.read().splitlines()
 # Close file for reading
@@ -72,18 +84,25 @@ for i in mac_addresses:
         new_devices.append(dic)
 
 # Open scanlog file for appending
-f3 = open(scanlog, 'a')
+if os.path.isfile(scanlog):
+    f3 = open(scanlog, 'a')
+else:
+    print("Could not find macscan.log file! Verify file path is correct!")
+    sys.exit()
+
 # If the new_devices list is empty
 if len(new_devices) == 0:
     # Write in scanlog file: All is well on: [date]
     f3.write("\n- - - - All is well on: " + datetime.now().strftime("%Y_%m_%H:%M") + " - - - -\n")
 else:
+    warning = "\nWARNING!! NEW DEVICE(S) ON THE LAN!! - UNKNOWN MAC ADDRESS(ES): " + str(new_devices) + "\n"
+    print(warning)
     # Write in scanlog file: New Devices on the LAN: {LIST OF DEVICES}
-    f3.write("\nWARNING!! NEW DEVICE(S) ON THE LAN!! - UNKNOWN MAC ADDRESS(ES): " + str(new_devices) + "\n")
+    f3.write(warning)
     # Create an email message object
     msg = EmailMessage()
     # Email description
-    msg.set_content("WARNING!! NEW DEVICE(S) ON THE LAN!!\n\nUNKNOWN MAC ADRESS(ES): " + str(new_devices))
+    msg.set_content(warning)
     # Email subject
     msg['Subject'] = "NEW DEVICE(S) ON THE LAN!"
     # From email
@@ -91,11 +110,14 @@ else:
     # To email
     msg['To'] = "email@adress.com"
     # Create SMTP server call which will send the email
-    s = smtplib.SMTP('localhost')
-    # send email
-    s.send_message(msg)
-    # Quit SMTP server call
-    s.quit()
+    try:
+        s = smtplib.SMTP(host='localhost', port=1025)
+        # send email
+        s.send_message(msg)
+        # Quit SMTP server call
+        s.quit()
+    except socket.error as e:
+        print("Could not send email report through SMTP server, verify SMTP address")
 
 # Close the scanlog file
 f3.close()
