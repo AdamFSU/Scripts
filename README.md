@@ -25,4 +25,10 @@ I've added as many comments as possible to be verbose as possible so the script 
 *Currently the scan performs: nmap -oX - -n -sn 192.168.1.69/24*
 *-sn has replaced -sP in newer versions of nmap, if you are using an older version of nmap that still uses -sP you will need to change -sn to -sP in the script*
 
+The format of the master mac address file is one mac address per line.An example would be:
+
+	AF:M2:R4:UI:ZZ:F2
+	H3:MM:W2:QQ:YZ:AA
+	HN:FF:45:99:XC:ZZ
+
 Feel free to remove or change any of the print statements and any content in general. You will need to configure the email addresses and your SMTP server host and port number, you can connect the SMTP server to gmail but will need to lookup how to do that, or just let me know and I can update script.
