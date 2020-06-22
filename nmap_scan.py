@@ -6,10 +6,9 @@
 import os
 import shutil
 import nmap
-import smtplib
 import sys
 import socket
-from email.message import EmailMessage
+import subprocess
 from datetime import datetime
 
 # variable containing the filepath of the nmap scan results file
@@ -97,25 +96,19 @@ else:
     print(warning)
     # Write in scanlog file: New Devices on the LAN: {LIST OF DEVICES}
     f3.write(warning)
-    # Create an email message object
-    msg = EmailMessage()
-    # Email description
-    msg.set_content(warning)
-    # Email subject
-    msg['Subject'] = "NEW DEVICE(S) ON THE LAN!"
-    # From email
-    msg['From'] = "email@adress.com"
-    # To email
-    msg['To'] = "email@adress.com"
-    # Create SMTP server call which will send the email
+
     try:
-        s = smtplib.SMTP(host='localhost', port=1025)
-        # send email
-        s.send_message(msg)
-        # Quit SMTP server call
-        s.quit()
-    except socket.error as e:
-        print("Could not send email report through SMTP server, verify SMTP address")
+        # First command which gets PIPEd to second command
+        p1 = subprocess.Popen(['echo', '-e', '\nWARNING!!'], stderr=subprocess.PIPE, universal_newlines=True,
+                              stdout=subprocess.PIPE)
+        # Second command which takes input from first command
+        p2 = subprocess.Popen(['mutt', '-e', 'my_hdr From:user@email.com', '-s', 'WARNING!! NEW DEVICE ON THE LAN',
+                               '-i', 'maclist.log user@email.com'], stdin=p1.stdout, stdout=subprocess.PIPE)
+        output = p2.communicate()
+        # Print output of running command
+        print(output)
+    except subprocess.SubprocessError as e:
+        print("Error sending email!")
 
 # Close the scanlog file
 f3.close()
