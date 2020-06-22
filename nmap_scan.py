@@ -102,13 +102,16 @@ else:
         p1 = subprocess.Popen(['echo', '-e', '\nWARNING!!'], stderr=subprocess.PIPE, universal_newlines=True,
                               stdout=subprocess.PIPE)
         # Second command which takes input from first command
-        p2 = subprocess.Popen(['mutt', '-e', 'my_hdr From:user@email.com', '-s', 'WARNING!! NEW DEVICE ON THE LAN',
-                               '-i', 'maclist.log user@email.com'], stdin=p1.stdout, stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(['mutt', '-e', 'my_hdr From:user@email.com', '-s', 'WARNING!! NEW DEVICE ON THE '
+                                                                                       'LAN',
+                               '-i', 'maclist.log', 'user@email.com'], stdin=p1.stdout, stdout=subprocess.PIPE)
         output = p2.communicate()
         # Print output of running command
         print(output)
-    except subprocess.SubprocessError as e:
-        print("Error sending email!")
+    except OSError as e:
+        print("Error sending email: {0}".format(e))
+    except subprocess.SubprocessError as se:
+        print("Error sending email: {0}".format(se))
 
 # Close the scanlog file
 f3.close()
