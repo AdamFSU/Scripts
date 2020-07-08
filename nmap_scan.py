@@ -7,7 +7,6 @@ import os
 import shutil
 import nmap
 import sys
-import socket
 import subprocess
 from datetime import datetime
 
@@ -108,6 +107,21 @@ else:
         output = p2.communicate()
         # Print output of running command
         print(output)
+
+        # Another way to send email with mutt using shell with python, for future reference.
+        # ------------------------------------------------------
+        #p1 = subprocess.Popen(['echo', '-e', '\nWARNING!!'], stderr=subprocess.PIPE, universal_newlines=True,
+        #                      stdout=subprocess.PIPE)
+
+        #subject = "WARNING, new device on LAN!"
+        #content = "There is a new, unknown device on the LAN, see attached."
+        #m1 = subprocess.Popen('echo "{content}" | mutt -a "{scanlog}" -s "{subject}" -- adambensee@gmail.com'.format(
+        #    content=content, scanlog=scanlog, subject=subject), shell=True)
+        #output = m1.communicate()
+        # Print output of running command
+        #print(output)
+        # ---------------------------------------------------------
+
     except OSError as e:
         print("Error sending email: {0}".format(e))
     except subprocess.SubprocessError as se:
