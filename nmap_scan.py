@@ -11,13 +11,10 @@ import subprocess
 from datetime import datetime
 
 # variable containing the filepath of the nmap scan results file
-mac_list = os.environ['HOME'] + "/maclist.log"
+mac_list = os.environ['HOME'] + "/maclist.txt"
 
 # variable containing the filepath of the approved mac addresses on the LAN file
-masterfile = os.environ['HOME'] + "/master_mac"
-
-# variable containing the filepath of the log file which documents every scan result
-scanlog = os.environ['HOME'] + "/macscan.log"
+masterfile = os.environ['HOME'] + "/master_mac.txt"
 
 # If a file from previous nmap scans exists, create a backup of the file
 if os.path.exists(mac_list):
@@ -79,54 +76,27 @@ for i in mac_addresses:
         # Add scanned mac address to new devices list
         new_devices.append(dic)
 
-# Open scanlog file for appending
-if os.path.isfile(scanlog):
-    f3 = open(scanlog, 'a')
-else:
-    print("Could not find macscan.log file! Verify file path is correct!")
-    sys.exit()
-
-# If the new_devices list is empty
-if len(new_devices) == 0:
-    # Write in scanlog file: All is well on: [date]
-    f3.write("\n- - - - All is well on: " + datetime.now().strftime("%Y_%m_%H:%M") + " - - - -\n")
-else:
+# If the new_devices list isn't empty
+if len(new_devices) != 0:
+    # output a warning to the console
     warning = "\nWARNING!! NEW DEVICE(S) ON THE LAN!! - UNKNOWN MAC ADDRESS(ES): " + str(new_devices) + "\n"
     print(warning)
-    # Write in scanlog file: New Devices on the LAN: {LIST OF DEVICES}
-    f3.write(warning)
 
+    # Create email notification of the warning
     try:
-        # First command which gets PIPEd to second command
-        p1 = subprocess.Popen(['echo', '-e', '\nWARNING!!'], stderr=subprocess.PIPE, universal_newlines=True,
-                              stdout=subprocess.PIPE)
-        # Second command which takes input from first command
-        p2 = subprocess.Popen(['mutt', '-e', 'my_hdr From:user@email.com', '-s', 'WARNING!! NEW DEVICE ON THE '
-                                                                                       'LAN',
-                               '-i', 'maclist.log', 'user@email.com'], stdin=p1.stdout, stdout=subprocess.PIPE)
-        output = p2.communicate()
-        # Print output of running command
-        print(output)
+        # subject of email
+        subject = "WARNING, new device on LAN!"
+        # content of email
+        content = "New unknown device(s) on the LAN: " + str(new_devices)
+        # shell process of sending email with mutt
+        m1 = subprocess.Popen('echo "{content}" | mutt -s "{subject}" -- adambensee@gmail.com'.format(
+            content=content, subject=subject), shell=True)
+        # output whether email was successful in sending or not
+        print(m1.communicate())
 
-        # Another way to send email with mutt using shell with python, for future reference.
-        # ------------------------------------------------------
-        #p1 = subprocess.Popen(['echo', '-e', '\nWARNING!!'], stderr=subprocess.PIPE, universal_newlines=True,
-        #                      stdout=subprocess.PIPE)
-
-        #subject = "WARNING, new device on LAN!"
-        #content = "There is a new, unknown device on the LAN, see attached."
-        #m1 = subprocess.Popen('echo "{content}" | mutt -a "{scanlog}" -s "{subject}" -- adambensee@gmail.com'.format(
-        #    content=content, scanlog=scanlog, subject=subject), shell=True)
-        #output = m1.communicate()
-        # Print output of running command
-        #print(output)
-        # ---------------------------------------------------------
-
+    # if sending of the email fails, this will output why
     except OSError as e:
         print("Error sending email: {0}".format(e))
     except subprocess.SubprocessError as se:
         print("Error sending email: {0}".format(se))
-
-# Close the scanlog file
-f3.close()
 
